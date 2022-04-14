@@ -18,7 +18,7 @@
 #define	BUFSIZE 64
 
 #define	MSG		"Any Message \n"
-
+#define PEERNAME "faze"
 
 /*------------------------------------------------------------------------
  * main - UDP client for TIME service that prints the resulting time
@@ -28,7 +28,7 @@ int
 main(int argc, char **argv)
 {
 	char	*host = "localhost";
-	int	port = 3000;
+	int	port = 3001;
 	char	now[100];		/* 32-bit integer to hold time	*/ 
 	struct hostent	*phe;	/* pointer to host information entry	*/
 	struct sockaddr_in sin;	/* an Internet endpoint address		*/
@@ -71,9 +71,38 @@ main(int argc, char **argv)
 	if (connect(s, (struct sockaddr *)&sin, sizeof(sin)) < 0)
 	fprintf(stderr, "Can't connect to %s %s \n", host, "Time");
 	
+
+	struct sockaddr_in reg_addr;
+	int x;
+	x = socket(AF_INET, SOCK_STREAM, 0);
+	reg_addr.sin_family = AF_INET;
+	reg_addr.sin_port = htons(0);
+	reg_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	bind(s, (struct sockaddr *)&reg_addr, sizeof(reg_addr));
+	
+
+	fd_set rfds, afds;
+	FD_ZERO(&afds);
+	FD_SET(x, &afds); /* Listening on a TCP socket */
+	FD_SET(0, &afds); /* Listening on stdin */
+	memcpy(&rfds, &afds, sizeof(rfds));
+	select(FD_SETSIZE, &rfds, NULL, NULL, NULL);
+	printf("Now listening to distribute\n");
+	if (FD_ISSET(0, &rfds)) {
+		//n = read(0, buf, BUFSIZE);
+		printf("task completed\n");
+	}
+	if(FD_ISSET(x, &rfds)){
+		int new_sd = accept(x, (struct sockaddr *)&reg_addr, &alen);
+		printf("Distributing...\n");
+		
+	}
+
+
 	/* Main Client Loop */
 	int mainLoop = 1;
     int user_choice; 
+
     
     do{        
         printf("1. Download\n"\
@@ -85,28 +114,33 @@ main(int argc, char **argv)
             /* Download Files */
             case (1):
                 printf("case1\n");
+				// send udp s type to index
+				// recieve s/r, set up tcp inbound
+
+
                 break;
             /* Register Files */
             case(2):
                 // open tcp socket
 				// send r type
-				int numbytes;
-				struct PDUr *senddata = create_r("node1", "content1", 5);
-                //void * sendstr = senddata;
-                printpdu_r(senddata);
-                if ((numbytes = sendto(s, senddata, sizeof(struct PDU), 0,
-                    (struct sockaddr *)&sin, sizeof(sin))) == -1) {
-                        perror("node: sendto");
-                        exit(1);
-                }
+			int numbytes;
+			char cname[10];
+			char pname[10];
+			struct PDUr *senddata = create_r(PEERNAME, "content1", 5);
+			printpdu_r(senddata);
+			if ((numbytes = sendto(s, senddata, sizeof(struct PDU), 0,
+				(struct sockaddr *)&sin, sizeof(sin))) == -1) {
+					perror("node: sendto");
+					exit(1);
+	}
 				// await a/e type
 				if (recvfrom(s, &buf, sizeof(buf), 0,
 				(struct sockaddr *)&fsin, &alen) < 0)
 					fprintf(stderr, "recvfrom error\n");
-				char *p = buf.data;
-				while(*p!='\n')
-					printf("%c", *p++);
-				printf("\n");
+				printpdu(&buf);
+
+				// listen on sockets
+				
 			break;
             /* De-register Files */
             case(3):
@@ -118,21 +152,5 @@ main(int argc, char **argv)
                 break;
         }
     }while(mainLoop);
-
-
-	//(void) write(s, MSG, strlen(MSG));
-	//(void) sendto(s, MSG, strlen(MSG), 0, 
-	//	(struct sockaddr *)&sin, sizeof(sin));
-	/* Read the time */
-
-	//n = read(s, (char *)&now, sizeof(now));
-	//if (recvfrom(s, &buf, sizeof(buf), 0,
-	//			(struct sockaddr *)&fsin, &alen) < 0)
-	//		fprintf(stderr, "recvfrom error\n");
-	//write(1, buf, sizeof(buf));
-	//char *p = &buf;
-	//while(*p!='\n')
-	//	printf("%c", *p++);
-	//printf("\n");
 	exit(0);
 }

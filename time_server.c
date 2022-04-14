@@ -28,7 +28,7 @@ main(int argc, char *argv[])
 	int	alen;			/* from-address length		*/
 	struct  sockaddr_in sin; /* an Internet endpoint address         */
         int     s, type;        /* socket descriptor and socket type    */
-	int 	port=3000;
+	int 	port=3001;
                                                                                 
 
 	switch(argc){
@@ -81,6 +81,7 @@ main(int argc, char *argv[])
 
                 break;
 			case('s'):
+			
 				break;
 			case('t'):
 				break;
